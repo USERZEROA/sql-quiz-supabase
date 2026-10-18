@@ -1,75 +1,78 @@
 # Mining Safety SQL Quiz
 
-A 20-point SQL quiz built with Next.js, Supabase Auth, and hosted PostgreSQL for IDS 706 Week 7. The five questions use 12 synthetic mine-inspection records. They are teaching examples, not real inspections or safety recommendations.
+[![Quiz checks](https://github.com/USERZEROA/sql-quiz-supabase/actions/workflows/ci.yml/badge.svg?branch=main&event=push)](https://github.com/USERZEROA/sql-quiz-supabase/actions/workflows/ci.yml)
 
-**Quiz site: not deployed yet. Replace this line with the actual public Vercel URL before submitting.**
+**Quiz site:** Not deployed yet.
+
+**Grading login:** `haiweiyu@duke.edu`. Use the quiz password supplied privately through Canvas, not a Duke account password.
+
+This IDS 706 Week 7 project is a 20-point SQL quiz built with Next.js, Supabase Auth, and hosted PostgreSQL. Its five questions use 12 synthetic safety-inspection records from three mine sites. The records are teaching examples, not real inspections or safety advice.
 
 ## Using the quiz
 
-Open the site and create an account or sign in with an existing email and password. Choose a question, enter a SELECT query, and click **Run SQL**. The result table comes from the hosted database, not a browser fixture. Each question is worth four points and has a fold-out hint containing reference SQL and the expected result. Different SQL that produces the requested result is acceptable; the app does not grade by comparing query text.
+Sign in, choose a question, enter SQL, and click **Run SQL** to see rows from the hosted database. Each question is worth four points and includes a hint, reference SQL, and an expected result table. The questions cover filtering, grouping, recent inspections, distinct hazards, and HAVING. Different SQL that produces the requested result is acceptable; there is no character-for-character answer check.
 
-**Preview live data** retrieves the teaching table. **Save quiz** stores a private copy of the five questions and your current answers in PostgreSQL. Give the copy a title, save it, then reopen it from **My saved quizzes** after refreshing or signing in again. **New copy** starts a separate draft. Reading questions and editing an unsaved local draft are allowed while signed out; running SQL, listing saved quizzes, and saving are not.
+**Preview live data** retrieves all 12 records. **Save quiz** stores a private copy of the five questions and your SQL answers. Give it a title and use **Open** under **My saved quizzes** to restore it after refreshing or signing in again. **New copy** starts another draft. Saving does not mark answers as correct.
+
+Signed-out visitors can read questions, view hints, and edit an unsaved draft. Running SQL, previewing live data, saving, and retrieving saved quizzes require a verified signed-in user.
 
 ## Local setup
 
-Use Node.js 22 or 24 and npm. In the repository root, keep your existing `.env.local`, or copy `.env.example` to `.env.local` and fill in the three required variables. Never commit the real file.
+Use Node.js 22 or 24. From the repository root, install the locked dependencies and start the development server:
 
 ```powershell
-npm install
+npm ci
 npm run dev
 ```
 
-Open `http://localhost:3000`. `npm install` creates `package-lock.json`; commit that lockfile with the source after reviewing the changes. The first install needs network access.
+Open `http://localhost:3000`. Before starting, copy `.env.example` to `.env.local` if you do not already have a configured local file. For this project's verified connection, configure all four variables below. Keep `.env.local` out of Git.
 
-| Variable | Meaning |
+| Variable | Value |
 | --- | --- |
-| `NEXT_PUBLIC_SUPABASE_URL` | The project's HTTPS API URL. |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Its publishable key, not a secret/service-role key. |
-| `QUIZ_DATABASE_URL` | The quiz_reader **Session pooler** URI on port 5432, ending in `?sslmode=require`. Server only. |
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase Project URL. |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | The project's publishable key. |
+| `QUIZ_DATABASE_URL` | The `quiz_reader` Session pooler URI, using port 5432 and ending in `?sslmode=require`. Server only. |
+| `QUIZ_DATABASE_CA_CERT` | The trusted CA certificate supplied by Supabase, as PEM text. Server only. |
 
-The database password is the password assigned to `quiz_reader`, not the project administrator password. URL-encode reserved characters in it. No administrator or service-role credential is needed by the website. The connection code requires TLS and verifies the server certificate; if your environment needs a custom root CA, set the optional `QUIZ_DATABASE_CA_CERT` to the PEM certificate supplied by Supabase. Do not disable certificate verification to bypass an error.
+Use the `quiz_reader` password, not an administrator or website-user password, and percent-encode reserved characters in the URI. Certificate verification stays enabled. The CA value accepts PEM with actual line breaks or escaped `\n` sequences; include the complete BEGIN and END lines.
 
-## Database setup
+## Database and authentication setup
 
-The SQL files belong in version control and contain no passwords. For a new Supabase project, run `supabase/01_quiz_data.sql`, `02_quiz_reader_permissions.sql`, and `03_saved_quizzes.sql` in that order using the SQL Editor's administrative role. The first two reproduce the teaching data and reader permissions. Existing data are not replaced, and an existing reader password/LOGIN setting is not reset. Assign the reader a strong password separately in a private administrative session; do not commit a password-setting statement.
+For a new Supabase project, run these scripts in order in the SQL Editor using the administrative role:
 
-For the project already initialized during development, **only `03_saved_quizzes.sql` still needs to be run**. It creates the saved-quiz table and owner-only RLS policies without modifying the 12 teaching records. Its final result should be `true, true, false, false`: RLS enabled, signed-in users allowed to save under their ownership policies, anonymous users not allowed to save, and quiz_reader not allowed to read saved quizzes.
+```text
+supabase/01_quiz_data.sql
+supabase/02_quiz_reader_permissions.sql
+supabase/03_saved_quizzes.sql
+```
 
-Keep `quiz_data` out of the Data API's exposed schemas. Live student SQL goes through the authenticated Next.js endpoint and Session pooler. Saving uses Supabase's Data API with the signed-in user's token and RLS; the database identity for live SELECTs is deliberately separate.
+These create teaching data, reader permissions, and the saved-quiz table. Enable LOGIN and assign a password to `quiz_reader` separately; the scripts do not contain or reset passwords. Keep `quiz_data` outside the Data API's exposed schemas. Teaching SQL runs through the Next.js endpoint and Session pooler. Saving uses the user's Supabase token and owner-only row-level security (RLS).
 
-## Authentication configuration
+Enable the Email provider in Supabase Auth. For a grading account, use **Authentication → Users → Add user → Create new user**, set an email and a quiz-only password, and select **Auto Confirm User**. This confirms that individual account without depending on confirmation email delivery. Website sign-in is separate from database-role login. Public self-registration requires a working confirmation flow if email confirmation is enabled; it has not yet been verified on a deployed site.
 
-Enable the Email provider in Supabase Auth. This version uses email/password rather than OAuth so no separate OAuth application is required. For the fastest local test, create a user in **Authentication → Users → Add user** and confirm it there, then sign in on the site.
+The development database already has all three scripts applied. It does not need to be recreated for deployment.
 
-For a public course demo containing only synthetic data, the owner may disable **Confirm email** in the Email provider settings so graders can create their own accounts without an SMTP setup. This means email ownership is not verified; it does not remove password authentication or the server's token validation. For a non-demo deployment, keep email confirmation enabled and configure a working SMTP provider instead. Set Supabase's Site URL to the final Vercel URL after deployment. Do not put a user's password in README or GitHub.
-
-## Tests and GitHub Actions
+## Checks and GitHub Actions
 
 ```powershell
-npm run typecheck
-npm test
-npm run build
+npm run check
 npm run check:db
 ```
 
-The unit tests cover request validation, signed-out API rejection, the five reference queries, alternative SELECT forms, and rejection of writes, extra statements, system-table access, and unsafe function calls. `check:db` is different: it really connects to Supabase using `QUIZ_DATABASE_URL`, verifies the reader role and 12-row dataset, checks isolation from saved quizzes, and compares all five reference queries with their expected result tables. It fails when credentials are missing; it is not a mock or a skipped check disguised as a pass.
+`check` runs TypeScript checking, tests, and the production build. Tests cover authentication, request validation, reference queries, and accepted or rejected SQL. `check:db` connects to Supabase, verifies reader permissions and the 12-row dataset, checks saved-quiz isolation, and compares all five reference queries with their expected results. Missing connection settings cause failure, not a skipped check.
 
-In GitHub, add a repository Actions secret named **`QUIZ_DATABASE_URL`** with the same reader Session pooler URI. Add `QUIZ_DATABASE_CA_CERT` only if using a custom CA. The workflow runs tests and a production build, followed by the real database check on pushes to `main` and manual runs. Pull requests run the offline checks without database secrets. It uses `npm ci` when the lockfile exists and otherwise uses `npm install` for the first run. Never print the secret or paste a password into the workflow.
+The workflow in `.github/workflows/ci.yml` uses Node.js 22. Its `tests` job runs the offline checks and build; `live-database` then connects to Supabase using the repository Secrets `QUIZ_DATABASE_URL` and `QUIZ_DATABASE_CA_CERT`. Both secrets are configured for this project. Pushes to `main` and manual runs include the live check. Pull requests run offline checks without database secrets. The badge above links to the workflow results.
 
-## Deploying on Vercel
+## Deployment
 
-Import this repository as a Next.js project in your personal Hobby workspace. Use Node.js 22 or 24, keep the repository root as the project root, and add the same three environment variables. The two public variables must be present when the site is built; redeploy after changing them. Add the CA variable only if needed. No custom domain is needed: use the actual `vercel.app` URL assigned to the deployment. Make sure the grader can access the production URL without a separate Vercel login.
+Import this repository into Vercel as a Next.js project, with the repository root as the project root and Node.js 22 or 24. Configure the same four environment variables for Production before deploying. Public Supabase variables are needed at build time, so changes require a new deployment. Use the assigned `vercel.app` production URL; no custom domain is needed.
 
-After deployment, replace the URL placeholder above, set the Supabase Site URL, and perform the manual checks in `docs/acceptance.md`. A generated workflow is not evidence that Actions ran; wait for the live-database job to succeed.
+After deployment, update Supabase's Site URL and the quiz-site line above. Verify public access, sign-in, SQL execution, saving, reopening, and sign-out using [docs/acceptance.md](docs/acceptance.md).
 
-## Query boundaries
+## Verification and scope
 
-This is a small quiz, not a general PostgreSQL console. Queries are parsed into an AST and restricted to one SELECT over `quiz_data.safety_inspections`, with common comparisons, aggregates, grouping, sorting, and LIMIT. Joins, CTEs, subqueries, other tables, write statements, and administrative functions are outside this version's scope. The server validates the Supabase user before execution, checks that the database account is quiz_reader, executes in a read-only transaction, applies a three-second statement timeout, and returns at most 100 rows. Saved quizzes use owner-only RLS policies, including checks on updates.
+Local TypeScript checks, all 58 automated tests, and the production build passed. The live database check passed with certificate verification and matched all five questions. Browser testing confirmed sign-in, the 12-row preview, the first question's four-row result, saving, reopening after refresh, and signed-out controls. GitHub Actions also completed both the `tests` and `live-database` jobs successfully. Public deployment and hosted-browser acceptance are still pending.
 
-The row-limit value and fixed application checks use parameters; saved text is sent through the Supabase client as data. User-authored SQL cannot be turned into a safe query by treating the entire statement as one parameter, so it uses structural validation and database privileges instead. An audit log and tamper-resistant audit-log feature are **not implemented or claimed for extra credit**.
+This is a focused teaching tool, not a general PostgreSQL console. It accepts one SELECT over `quiz_data.safety_inspections` and supports the comparisons, aggregates, grouping, sorting, and limits needed by the quiz. Joins, CTEs, subqueries, other tables, writes, and administrative functions are outside its supported SQL subset. The server validates the user before execution, uses a read-only transaction, applies a three-second statement timeout, and returns at most 100 rows.
 
-## Verification status
-
-The project files and test commands are included. The authoring environment could not access npm or the private Supabase project, so a full Next.js build, complete test suite, real authentication, live database queries, and cloud deployment have **not** been claimed as passed here. Record actual local and hosted results in `docs/acceptance.md` before submission.
-
-Reference documentation: [Supabase database connections](https://supabase.com/docs/guides/database/connecting-to-postgres), [Supabase password login](https://supabase.com/docs/reference/javascript/auth-signinwithpassword), [RLS](https://supabase.com/docs/guides/database/postgres/row-level-security), and [GitHub Actions secrets](https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/use-secrets).
+Fixed application values use query parameters, and saved SQL is sent as data through the Supabase client. Student-authored SQL is restricted through structural validation and database permissions rather than treated as one parameter. Audit logging and tamper-resistant audit-log checks are not implemented or claimed for extra credit.
