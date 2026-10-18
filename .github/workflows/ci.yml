@@ -1,0 +1,43 @@
+name: Quiz checks
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install dependencies
+        run: |
+          if [ -f package-lock.json ]; then npm ci; else npm install; fi
+      - name: Type check
+        run: npm run typecheck
+      - name: Unit and authorization tests
+        run: npm test
+      - name: Production build
+        run: npm run build
+  live-database:
+    # Do not provide database credentials to pull-request code.
+    if: github.event_name != 'pull_request'
+    needs: tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install dependencies
+        run: |
+          if [ -f package-lock.json ]; then npm ci; else npm install; fi
+      - name: Check Supabase through Session pooler
+        env:
+          QUIZ_DATABASE_URL: ${{ secrets.QUIZ_DATABASE_URL }}
+          QUIZ_DATABASE_CA_CERT: ${{ secrets.QUIZ_DATABASE_CA_CERT }}
+        run: npm run check:db
