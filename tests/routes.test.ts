@@ -13,3 +13,9 @@ for (const [label, handler, method] of [
     assert.match(data.error, /Sign in/);
   });
 }
+
+import { GET as activity } from "../app/api/audit/route";
+test("signed-out audit history is rejected by the server", async () => {
+  const response = await activity(new Request("http://localhost/api/audit"));
+  assert.equal(response.status, 401);
+});

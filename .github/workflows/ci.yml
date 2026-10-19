@@ -41,3 +41,9 @@ jobs:
           QUIZ_DATABASE_URL: ${{ secrets.QUIZ_DATABASE_URL }}
           QUIZ_DATABASE_CA_CERT: ${{ secrets.QUIZ_DATABASE_CA_CERT }}
         run: npm run check:db
+
+      - name: Verify append-only audit permissions
+        env:
+          QUIZ_DATABASE_URL: ${{ secrets.QUIZ_DATABASE_URL }}
+          QUIZ_DATABASE_CA_CERT: ${{ secrets.QUIZ_DATABASE_CA_CERT }}
+        run: npm run check:audit

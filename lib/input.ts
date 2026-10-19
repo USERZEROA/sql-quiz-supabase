@@ -1,4 +1,5 @@
 import { QUESTIONS } from "./questions";
+import { validateParameters, type QueryParameters } from "./parameters";
 
 export class HttpError extends Error {
   constructor(public status: number, message: string) { super(message); }
@@ -59,7 +60,19 @@ export function validateSavedQuiz(data: Record<string, unknown>) {
     if (typeof value !== "string" || value.length > 4000) throw new HttpError(400, "Each SQL answer must be at most 4,000 characters.");
     clean[id] = value;
   }
-  return { id: data.id as string | undefined, title, answers: clean };
+  const rawParameters = data.parameters ?? {};
+  if (!rawParameters || typeof rawParameters !== "object" || Array.isArray(rawParameters)) {
+    throw new HttpError(400, "Saved parameters must be an object keyed by question ID.");
+  }
+  const parameterItems = rawParameters as Record<string, unknown>;
+  if (Object.keys(parameterItems).some(key => !ids.has(key))) throw new HttpError(400, "Unknown parameter question ID.");
+  const parameters: Record<string, QueryParameters> = {};
+  for (const id of ids) {
+    try { parameters[id] = validateParameters(parameterItems[id] ?? []); }
+    catch (error) { throw new HttpError(400, `Question ${id}: ${error instanceof Error ? error.message : "Invalid parameters."}`); }
+  }
+  // Client-supplied owner, scores, or grades are intentionally not accepted.
+  return { id: data.id as string | undefined, title, answers: clean, parameters };
 }
 
 export function jsonError(error: unknown): Response {

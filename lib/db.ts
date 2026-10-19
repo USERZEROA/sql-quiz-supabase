@@ -1,6 +1,6 @@
 import { Client, types } from "pg";
 import { databaseConfig } from "./db-config";
-import { validateSql } from "./sql";
+import { prepareQuery } from "./sql";
 import { HttpError } from "./input";
 import type { Cell } from "./questions";
 
@@ -21,8 +21,8 @@ export async function checkReader(client: Client) {
   }
 }
 
-export async function runQuery(input: unknown) {
-  const sql = validateSql(input);
+export async function runQuery(input: unknown, parameters: unknown = []) {
+  const prepared = prepareQuery(input, parameters);
   const client = createDatabaseClient();
   const start = Date.now();
   try {
@@ -34,7 +34,7 @@ export async function runQuery(input: unknown) {
     await client.query("SET LOCAL lock_timeout = '1s'");
     const result = await client.query<Cell[]>({
       // SQL is a single allowlisted AST; the outer limit is a bound data value.
-      text: `SELECT * FROM (${sql}) AS quiz_result LIMIT $1`, values: [101], rowMode: "array"
+      text: prepared.text, values: prepared.values, rowMode: "array"
     });
     await client.query("ROLLBACK");
     return { columns: result.fields.map(f => f.name), rows: result.rows.slice(0, 100),

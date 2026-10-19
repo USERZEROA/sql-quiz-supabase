@@ -12,7 +12,9 @@
     "typecheck": "tsc --noEmit",
     "test": "tsx --test tests/*.test.ts",
     "check": "npm run typecheck && npm test && npm run build",
-    "check:db": "tsx scripts/check-db.ts"
+    "check:db": "tsx scripts/check-db.ts",
+    "check:audit": "tsx scripts/check-audit.ts",
+    "check:all": "npm run check && npm run check:db && npm run check:audit"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.118.0",

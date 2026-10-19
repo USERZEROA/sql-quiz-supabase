@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
 import { checkReader, createDatabaseClient, runQuery } from "../lib/db";
 import { QUESTIONS } from "../lib/questions";
+import { PARAMETER_EXAMPLE } from "../lib/parameters";
+import { gradeResult } from "../lib/grading";
 
 let stage = "CONFIG";
 
@@ -32,7 +34,7 @@ function explainFailure(error: unknown): string {
   }
 
   if (["SELF_SIGNED_CERT_IN_CHAIN", "DEPTH_ZERO_SELF_SIGNED_CERT", "UNABLE_TO_VERIFY_LEAF_SIGNATURE", "UNABLE_TO_GET_ISSUER_CERT", "UNABLE_TO_GET_ISSUER_CERT_LOCALLY"].includes(code) ||
-    /self.signed|unable to verify|unable to get.*issuer/i.test(message)) {
+      /self.signed|unable to verify|unable to get.*issuer/i.test(message)) {
     return "[TLS_CERTIFICATE_CHAIN] The server certificate could not be verified. Configure QUIZ_DATABASE_CA_CERT with the trusted CA PEM for this endpoint. Do not disable certificate verification.";
   }
   if (code === "ERR_TLS_CERT_ALTNAME_INVALID") {
@@ -138,6 +140,14 @@ async function main() {
     );
     console.log(`PASS: question ${q.id} matches its expected live result (${q.points} points).`);
   }
+  stage = "PARAMETER_BINDING";
+  const parameterized = await runQuery(PARAMETER_EXAMPLE.sql, PARAMETER_EXAMPLE.parameters);
+  assert.equal(gradeResult(1, parameterized).earned, 4);
+  const maliciousValue = await runQuery(PARAMETER_EXAMPLE.sql, ["High' OR 1=1 --", "Open"]);
+  assert.equal(maliciousValue.rows.length, 0);
+  const limited = await runQuery("SELECT inspection_id, mine_site, inspection_date FROM safety_inspections ORDER BY inspection_date DESC, inspection_id DESC LIMIT $1", [3]);
+  assert.equal(gradeResult(3, limited).earned, 4);
+  console.log("PASS: bound parameters, injection-like text treated as data, and parameterized LIMIT.");
   console.log("LIVE DATABASE CHECK PASSED: five questions, 20 points. No passwords were printed.");
 }
 

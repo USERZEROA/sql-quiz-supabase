@@ -1,32 +1,25 @@
-# Manual acceptance record
+# Extra-credit acceptance
 
-Status: not yet run against the student's project. Replace each pending entry with the actual result and date. Never include passwords or tokens in screenshots.
+The deployed baseline and original 58-test suite were checked before this upgrade. Do not treat those results as tests of the new code. Record dates and results below after running it locally and on the production URL.
 
-| Check | Actual result |
+| Check | Result after upgrade |
 | --- | --- |
-| `npm run typecheck`, `npm test`, `npm run build` | Pending |
-| `npm run check:db` connects through Session pooler and checks all five hints | Pending |
-| Signed-out Run and Save buttons are disabled | Pending |
-| Signed-out POST /api/query and POST /api/quizzes return 401 | Pending |
-| Invalid bearer token is rejected | Pending |
-| Create account/sign in, run a self-written SELECT, see live rows | Pending |
-| Run each question's reference SQL and compare its result with the hint | Pending |
-| Save quiz, refresh, reopen questions and answers | Pending |
-| Sign out; run/save requests without a session remain rejected | Pending |
-| A second account cannot list, read, overwrite, or delete the first account's saved quiz | Pending |
-| Attempt a DELETE or pg_sleep query; confirm rejection and unchanged data | Pending |
-| Public Vercel URL works in a private browser window | Pending |
-| GitHub Actions live-database job succeeds using the repository Secret | Pending |
-| README contains the actual quiz site URL | Pending |
-| Git history contains no real password, .env.local, or secret key | Pending |
+| SQL migration 04 returns true / true / false / false / true | Pending |
+| SQL verification 05: every returned `passed` value is true | Pending |
+| `npm run check` | Pending |
+| `npm run check:db`: normal and parameterized live queries | Pending |
+| `npm run check:audit`: real reader mutation attempts are denied | Pending |
+| Latest GitHub Actions `tests` and `live-database` jobs | Pending |
+| Signed-out query, save and history requests are rejected | Pending |
+| First question's parameterized example returns 4 rows and earns 4/4 | Pending |
+| Literal SQL answers still work with [] parameters | Pending |
+| Wrong answer earns 0; edited answers clear the old score | Pending |
+| Five reference answers produce a total of 20/20 | Pending |
+| Save, refresh and Open restore SQL, parameters and trusted scores | Pending |
+| My activity shows the correct user, SQL/parameters and save contents | Pending |
+| Second user's activity and saved quizzes do not expose the first user's | Pending |
+| Production sign-out clears results, scores and private activity | Pending |
 
-Use the browser Network panel to verify API status codes, not only whether buttons are hidden. For cross-user checks, keep the first user's quiz ID, sign in as the second user, and verify that attempts to update that ID are rejected. RLS must also protect direct Supabase Data API access, not just the Next.js UI.
+For the parameter test, use the first question's example with `["High", "Open"]`. Change only the first value to `"High' OR 1=1 --"`: the result should be empty, not a bypassed filter. Restore the example afterward.
 
-Example signed-out check from PowerShell (while the dev server is running):
-
-```powershell
-curl.exe -i -X POST http://localhost:3000/api/query -H "Content-Type: application/json" --data '{}'
-curl.exe -i -X POST http://localhost:3000/api/quizzes -H "Content-Type: application/json" --data '{}'
-```
-
-Both should return HTTP 401 before any SQL runs or data are saved. These examples use no real credentials.
+Script 05 is an administrative verification, not a button exposed to takers. It changes effective roles inside a transaction and attempts INSERT, UPDATE, DELETE and TRUNCATE against actual temporary probe entries. It also tests the own-history function and save triggers. A successful run leaves existing data unchanged; an unexpected allowed operation raises an error and rolls the transaction back. Save its output as evidence of the integrity check.

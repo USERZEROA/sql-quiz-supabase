@@ -1,0 +1,31 @@
+Full replacement files; preserve every file not listed here.
+No new environment variables, dependencies or credentials are needed.
+
+REPLACE	.github/workflows/ci.yml
+REPLACE	README.md
+REPLACE	START_HERE.md
+ADD	app/api/audit/route.ts
+REPLACE	app/api/query/route.ts
+REPLACE	app/api/quizzes/route.ts
+REPLACE	app/globals.css
+REPLACE	app/page.tsx
+REPLACE	docs/acceptance.md
+ADD	docs/extra-credit-validation.md
+ADD	docs/upgrade-extra-credit.md
+ADD	lib/audit.ts
+REPLACE	lib/db.ts
+ADD	lib/grading.ts
+REPLACE	lib/input.ts
+ADD	lib/parameters.ts
+ADD	lib/query-service.ts
+REPLACE	lib/sql.ts
+REPLACE	package.json
+ADD	scripts/check-audit.ts
+REPLACE	scripts/check-db.ts
+ADD	supabase/04_extra_credit.sql
+ADD	supabase/05_verify_audit_integrity.sql
+ADD	tests/parameter-sql.test.ts
+ADD	tests/parameters-grading.test.ts
+ADD	tests/query-service.test.ts
+REPLACE	tests/routes.test.ts
+ADD	docs/extra-credit-files.txt
