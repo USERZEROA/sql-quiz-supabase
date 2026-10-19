@@ -55,7 +55,7 @@ npm run dev
 
 Open `http://localhost:3000`. For a new database, run SQL scripts 01, 02, 03, and 04 in `supabase/` in order. Set the reader's LOGIN/password separately. In the database already used for this project, run **only `04_extra_credit.sql`**, then **`05_verify_audit_integrity.sql`**. These do not replace teaching data or reset passwords.
 
-Enable the Email provider in Supabase Auth. A grading user can be created and auto-confirmed in **Authentication → Users → Add user**. Public signup still depends on the project's confirmation/email configuration. Set the Auth Site URL to the public quiz URL. No OAuth application or administrator credential is needed by the website.
+This site provides sign-in and sign-out only; it does not offer self-registration or send registration emails. Keep the Email provider enabled in Supabase Auth. Create and auto-confirm grading accounts in **Authentication → Users → Add user → Create new user**, and provide their quiz-only credentials in the Canvas assignment comments. In **Authentication → Sign In / Providers**, turn off **Allow new users to sign up** to disable public registration while allowing existing users to sign in. Do not turn off the Email provider. Set the Auth Site URL to the public quiz URL. No OAuth application or administrator credential is needed by the website.
 
 ## Audit history and integrity
 

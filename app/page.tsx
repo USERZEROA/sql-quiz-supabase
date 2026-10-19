@@ -36,7 +36,6 @@ export default function Home() {
   const [ready, setReady] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [signUp, setSignUp] = useState(false);
   const [authBusy, setAuthBusy] = useState(false);
   const [authMessage, setAuthMessage] = useState("");
   const [active, setActive] = useState(0);
@@ -120,11 +119,10 @@ export default function Home() {
     setAuthBusy(true); setAuthMessage("");
     try {
       const credentials = { email: email.trim(), password };
-      const response = signUp ? await client.current.auth.signUp(credentials) :
-        await client.current.auth.signInWithPassword(credentials);
+      const response = await client.current.auth.signInWithPassword(credentials);
       if (response.error) throw response.error;
+      if (!response.data.session) throw new Error("Sign-in did not complete. Please try again.");
       setPassword("");
-      setAuthMessage(response.data.session ? "" : "Account request received. Confirm your email before signing in. If this is the class demo, ask the owner to check the email-confirmation setting.");
     } catch (error) { setAuthMessage(error instanceof Error ? error.message : "Sign-in failed."); }
     finally { setAuthBusy(false); }
   }
@@ -217,16 +215,14 @@ export default function Home() {
     <section className="auth card">
       {session ? <div className="auth-row"><div><strong>Signed in</strong><p>{session.user.email}</p></div>
         <button className="secondary" onClick={signOut} disabled={authBusy || busy}>Sign out</button></div> : <>
-        <h2>{signUp ? "Create an account" : "Sign in to run and save"}</h2>
-        <p className="muted">You may read the questions while signed out. Running SQL and saving a quiz require an account.</p>
+        <h2>Sign in to run and save</h2>
+        <p className="muted">Use an account provided by the quiz owner. You may read questions while signed out.</p>
+        <p className="notice"><strong>For grading access, check the Canvas assignment comments for the quiz login email and password.</strong></p>
         <form className="auth-form" onSubmit={authenticate}>
           <label>Email<input type="email" value={email} onChange={e => setEmail(e.target.value)} autoComplete="email" required /></label>
-          <label>Password<input type="password" value={password} onChange={e => setPassword(e.target.value)} autoComplete={signUp ? "new-password" : "current-password"} minLength={8} required /></label>
-          <button disabled={!ready || authBusy}>{authBusy ? "Please wait…" : signUp ? "Create account" : "Sign in"}</button>
+          <label>Password<input type="password" value={password} onChange={e => setPassword(e.target.value)} autoComplete="current-password" minLength={8} required /></label>
+          <button disabled={!ready || authBusy}>{authBusy ? "Please wait…" : "Sign in"}</button>
         </form>
-        <button className="link" onClick={() => { setSignUp(!signUp); setAuthMessage(""); }} disabled={authBusy}>
-          {signUp ? "Already registered? Sign in" : "New here? Create an account"}
-        </button>
       </>}
       {authMessage && <p className="notice" role="status">{authMessage}</p>}
     </section>
