@@ -5,6 +5,7 @@ import { createClient, type Session, type SupabaseClient } from "@supabase/supab
 import { QUESTIONS, SCHEMA_COLUMNS, STARTER_SQL, emptyAnswers, type ResultTable } from "../lib/questions";
 import { parseParameterText, PARAMETER_EXAMPLE, type QueryParameters } from "../lib/parameters";
 import { totalScore, type Grade, type Grades } from "../lib/grading";
+import PageNavigation from "./components/page-navigation";
 
 type SavedQuiz = { id: string; title: string; answers: Record<string, string>;
   parameters?: Record<string, QueryParameters>; scores?: Grades; updated_at: string };
@@ -207,7 +208,7 @@ export default function Home() {
   }
 
   return <main className="shell">
-    <header className="topbar"><div className="wordmark">MINE / SQL LAB</div><span className="tag">5 questions · 20 points</span></header>
+    <PageNavigation active="quiz" busy={busy || authBusy} />
     <section className="intro"><p className="eyebrow">SQL PRACTICE</p><h1>Mining Safety SQL Quiz</h1>
       <p>Investigate inspection records across three mine sites. Write your own query, run it against PostgreSQL, and compare the result with the hint.</p>
       <p className="muted">All 12 records are synthetic teaching data, not operational safety advice.</p>

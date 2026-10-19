@@ -1,0 +1,26 @@
+INSTALL THIS ADDITIVE PATCH
+
+Copy the contents of the sql-quiz-supabase directory into the existing project root.
+All 14 files in this archive are NEW Week 8 files. No Week 7 page, API, SQL migration,
+README, environment file, package.json, or lockfile is overwritten.
+
+Do not rerun the Chroma upload: your existing collection already contains 8 records.
+Do not rerun SQL migrations 01-05.
+No npm install is needed if the dependencies from the successful CLI probe remain installed.
+
+Run:
+  npm run check
+  npm run dev
+
+Open:
+  http://localhost:3000/rag
+
+Sign in with an existing quiz account. Leave automatic execution checked and click
+Generate, run & validate. Wait for the complete response. Provider calls consume usage.
+Test locally before publishing.
+
+For deployment, add GEMINI_API_KEY, CHROMA_API_KEY, CHROMA_TENANT, CHROMA_DATABASE
+in Vercel Production. Preserve the 4 Week 7 settings. A new deployment is needed.
+After deployment open https://sql-quiz-supabase.vercel.app/rag.
+
+See docs/week8-rag.md for the final README snippet and mandatory screenshot checklist.
