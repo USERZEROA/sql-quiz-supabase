@@ -7,9 +7,9 @@
 
 ## Grading access: check Canvas assignment comments
 
-**I will provide the login email and password in the Canvas assignment comments for each assignment. Please check those comments before signing in. The same quiz account works on both pages; these are not university account credentials.**
+**The quiz login email and password will be provided in the Canvas assignment comments for each week. Please check the comments before signing in. The same quiz account works on both pages.**
 
-This IDS 706 project combines the Week 7 SQL quiz with the Week 8 RAG extension. Both pages use Next.js, Supabase Auth, and the same hosted PostgreSQL database. The dataset contains 12 synthetic safety-inspection records from three mine sites, not real inspections or safety advice. The navigation buttons switch between the two pages without changing the database or requiring a different account.
+This IDS 706 project combines the Week 7 SQL quiz with the Week 8 RAG extension. Both pages use Next.js, Supabase Auth, and the same hosted PostgreSQL database. The dataset contains 12 synthetic safety-inspection records from three mine sites, not real inspections or safety advice. Use the navigation buttons to switch between the two pages.
 
 ## Week 8: RAG Text-to-SQL
 
@@ -27,7 +27,7 @@ Natural-language question
 
 Chroma Cloud stores eight knowledge records in `mining-sql-knowledge-v1`: the table schema, business rules, and two example question/SQL pairs. The notes are defined in `lib/rag-knowledge.ts`. Indexing and retrieval use Chroma Cloud's `Qwen/Qwen3-Embedding-0.6B` model with the `nl_to_code` task. A question triggers actual vector retrieval for the five closest notes; the website displays their IDs, contents, and distances. These distances are not accuracy scores.
 
-The server sends those retrieved notes and the question to the Gemini `generateContent` API. The default model is `gemini-3.1-flash-lite`. The selected quiz question's reference SQL and expected rows are not added to the prompt; they are kept for result validation. The retrieved collection does contain the separate few-shot examples described above. There is no fallback that silently substitutes a reference answer if retrieval or generation fails. Duke and Anthropic credentials are not used by this RAG page.
+The server sends those retrieved notes and the question to the Gemini `generateContent` API. The default model is `gemini-3.1-flash-lite`. The selected quiz question's reference SQL and expected rows are not added to the prompt; they are kept for result validation. The retrieved collection includes the separate few-shot examples described above. Retrieval and generation failures are displayed instead of being replaced with reference answers.
 
 ### Using the RAG page
 
@@ -35,23 +35,23 @@ Sign in at `/rag`, select the quiz question to validate against, and enter or re
 
 Clear the checkbox to use **Generate SQL** without executing it. For a question outside the five quiz tasks, select **Custom question**: the application can generate and execute SQL, but reports that no reference answer is available rather than grading it against an unrelated quiz question. Changing a preset question's meaning without changing the selection still validates against that selected task.
 
-Generated SQL, execution results, and validation are shown separately. Incorrect answers remain incorrect, and rejected SQL remains visible with an execution error. SQL accuracy is not guaranteed. The same AST validation, `quiz_reader` account, read-only transaction, timeout, and row limit used in Week 7 apply to AI-generated queries.
+Generated SQL, execution results, and validation are shown separately. SQL that fails the safety checks remains visible with an execution error. AI-generated queries use the same AST validation, `quiz_reader` account, read-only transaction, timeout, and row limit as handwritten queries.
 
 Allow at least ten seconds between requests and wait for the current request to finish. Calls consume Gemini quota and Chroma usage. The per-user guard is local to a server instance, not a global spending cap. The RAG page does not save a separate conversation or update the original quiz's in-memory total. Audited SQL execution can be reviewed through **My activity** on the Week 7 page; generation-only requests are not SQL audit events. Save a Week 7 draft before navigating away if you need to keep it.
 
-### Required screenshots
+### RAG demonstration
 
-**Question and generated SQL.** This generation-only example shows the natural-language question, Gemini's SQL, and the retrieved knowledge. The page explicitly states that SQL was not executed in this mode.
+**Question and generated SQL.** In generation-only mode, the application displays the question, Gemini's SQL, and the retrieved knowledge without executing the query.
 
 ![Week 8 question, generated SQL, and retrieved context](docs/screenshots/week8-rag-generation.png)
 
-**Automatic execution and validation.** With execution enabled, the generated query returns inspections 1, 3, 5, and 11 and receives **Correct — 4/4**. The screenshot includes the generated SQL, PostgreSQL result table, validation outcome, and retrieval evidence.
+**Automatic execution and validation.** With execution enabled, the generated query returns inspections 1, 3, 5, and 11. The result table and **Correct — 4/4** validation appear below the SQL.
 
 ![Week 8 generated SQL, automatically executed results, and validation](docs/screenshots/week8-rag-validation.png)
 
 ## Week 7: Taking the SQL quiz
 
-The original page at `/` remains available. Its five questions are worth four points each. Sign in, choose a question, enter SQL, and click **Run SQL & check answer**. The result comes from PostgreSQL. Each question includes a hint, reference SQL, and an expected result table. Grading compares the returned values and the requested column and row order, not SQL text or column aliases. A correct answer earns 4 points; an incorrect answer earns 0. The total is displayed out of 20. Hints are allowed: this is a practice quiz, not a secure examination.
+The original page at `/` remains available. Its five questions are worth four points each. Sign in, choose a question, enter SQL, and click **Run SQL & check answer**. The result comes from PostgreSQL. Each question includes a hint, reference SQL, and an expected result table. Grading compares the returned values and the requested column and row order, not SQL text or column aliases. A correct answer earns 4 points; an incorrect answer earns 0. The total is displayed out of 20. Hints are available throughout the practice quiz.
 
 Editing an answer or its parameters clears that question's displayed score until it is run again. **Preview live data** retrieves all 12 records without awarding points. **Save quiz** stores a private copy of the questions, answers, parameters, and scores derived from recorded runs. Refresh and click **Open** to restore it. **New copy** starts another draft.
 
@@ -76,7 +76,7 @@ Values are passed separately through node-postgres's `values` argument, not inse
 
 ## Local setup
 
-Use Node.js 22 or 24. Create `.env.local` in the repository root, or copy `.env.example` and add any missing RAG variables from the table below. Do not overwrite an existing working local configuration. The combined application uses eight variables:
+Use Node.js 22 or 24. Copy `.env.example` to `.env.local` in the repository root and fill in the values below. Keep an existing configured `.env.local` if you already have one. The combined application uses eight variables:
 
 | Variable | Purpose |
 | --- | --- |
@@ -98,7 +98,7 @@ npm run dev
 
 Open `http://localhost:3000` for the original quiz or `http://localhost:3000/rag` for the RAG page. Dependencies and their versions are recorded in `package.json` and `package-lock.json`.
 
-Development and production builds use `next dev --webpack` and `next build --webpack`. The project encountered a Turbopack tracing conflict with Chroma's package declarations. Keep the Webpack scripts and the Chroma server-package settings in `next.config.ts`. To test a production build locally:
+The development and build scripts use Webpack for compatibility with the Chroma packages. To test a production build locally:
 
 ```powershell
 npm run build
@@ -130,7 +130,7 @@ npx tsx scripts/index-rag.ts
 
 The script checks the live PostgreSQL columns, types, and nullability against the teaching schema, then embeds and upserts the eight stable knowledge IDs. It creates the collection if needed and checks its embedding metadata. Indexing consumes Chroma embedding usage; it does not call Gemini or change PostgreSQL data.
 
-The existing collection is already populated. Do not reindex it just to start or deploy the website. The web request opens the collection and performs vector retrieval; it does not create or seed knowledge implicitly. The deployed server must have access to both Chroma Cloud and Gemini, not just the local development machine.
+The deployed project already has these eight records indexed. Indexing is needed only for a new collection or changes to the notes. Website requests retrieve from the existing collection; they do not seed it. Both Chroma Cloud and Gemini must be reachable from the deployed backend.
 
 ## Audit history and integrity
 
@@ -148,20 +148,18 @@ npm run check:all
 
 This runs TypeScript checking, automated tests, the production build, `check:db`, and `check:audit`, stopping on failure. The database check executes all five reference answers and parameterized queries against Supabase. The audit check verifies privileges and actually attempts prohibited operations as `quiz_reader`. SQL script 05 separately checks the other taker roles and database triggers.
 
-The RAG tests cover input validation, context passed from retrieval to Gemini, generated SQL passed to execution, generation-only mode, custom questions, API failures, and result validation. They use mocked providers: passing them does not demonstrate live vector retrieval or a working model API. Use `/rag` with real provider settings for the end-to-end demonstration.
+The RAG tests cover input validation, retrieved context passed to Gemini, generated SQL passed to execution, generation-only mode, custom questions, API failures, and result validation. These tests use mocked providers. Live retrieval and generation are tested separately through `/rag`.
 
 GitHub Actions uses Node.js 22. The `tests` job runs offline checks and a build; `live-database` runs `check:db` and `check:audit` using the repository Secrets `QUIZ_DATABASE_URL` and `QUIZ_DATABASE_CA_CERT`. Pushes to `main` and manual runs include the live checks. Pull requests run offline checks without those secrets. RAG tests are included in the normal test suite, but CI does not make generation calls on every push. The badge links to the current workflow results.
 
-To deploy, import this repository into Vercel as Next.js and configure all eight variables for Production. Keep the repository root as the project root and the default build command using the project's `build` script. Environment-variable changes require a new deployment. Existing deployments only need the four RAG variables added to their working Week 7 configuration; they do not need a new Supabase database or a new website.
+To deploy, import this repository into Vercel as Next.js and configure all eight variables for Production. Keep the repository root as the project root and use the project's `build` script. Environment-variable changes require a new deployment. An existing Week 7 deployment needs the four additional RAG variables, but no new PostgreSQL migration.
 
-Verify that both public URLs open without a separate Vercel login. On `/rag`, sign in and test generation-only mode, then automatic execution and validation. Capture the required screenshots under `docs/screenshots/` and keep the README image paths consistent with their filenames.
+Both public pages should be accessible without a Vercel account. The application itself requires a quiz account to run queries or generate SQL.
 
 ## Verification and limitations
 
 The Week 7 baseline passed **117 automated tests**, the production build, and both live database checks. SQL script 05 completed **19 integrity checks**. Week 7 production acceptance covered all five answers, **20/20** scoring, incorrect-answer scoring, save/reopen recovery, query and save activity, cross-account isolation, and signed-out restrictions. That record is retained in [docs/acceptance.md](docs/acceptance.md).
 
-With the RAG extension, the combined suite has passed **145 tests**, and the production build completed after switching to Webpack. The recorded RAG browser demonstrations show actual five-note retrieval, Gemini SQL generation, generation-only behavior, and automatic execution of the first question with four matching rows and a **Correct — 4/4** result. The screenshots above document those examples; they are not a claim that every natural-language question generates correct SQL.
+With the RAG extension, the combined suite has passed **145 tests**, and the production build completed after switching to Webpack. The recorded RAG browser demonstrations show actual five-note retrieval, Gemini SQL generation, generation-only behavior, and automatic execution of the first question with four matching rows and a **Correct — 4/4** result. The screenshots above show these recorded runs.
 
 Both pages use a limited SQL subset: one SELECT over the teaching table, common expressions and aggregates, grouping, sorting, and LIMIT. Joins, CTEs, subqueries, other schemas, and writes are not supported. Execution is read-only, has a three-second statement timeout, and displays at most 100 rows. Model output is subject to the same checks as handwritten SQL. Provider quotas, API availability, and retrieval quality can affect generation, and failures are shown rather than replaced with preset answers.
-
-Week 7's optional parameter binding, audit history, and taker-level log integrity features remain available. Week 8 adds actual vector retrieval and AI SQL generation, plus automatic read-only execution and result validation. The course determines the awarded marks.
