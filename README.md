@@ -2,25 +2,25 @@
 
 [![Quiz checks](https://github.com/USERZEROA/sql-quiz-supabase/actions/workflows/ci.yml/badge.svg?branch=main&event=push)](https://github.com/USERZEROA/sql-quiz-supabase/actions/workflows/ci.yml)
 
-**Quiz site:** [Open the quiz](https://sql-quiz-supabase.vercel.app)
+**Quiz site:** [Open the Mining Safety SQL Quiz](https://sql-quiz-supabase.vercel.app)
 
 ## Grading access: check Canvas assignment comments
 
-**I will provide the quiz login email and password in the Canvas assignment comments. Please check those comments before signing in. These are quiz-only credentials, not a university account login. No login password is stored in this repository.**
+**I will provide the quiz login email and password in the Canvas assignment comments. Please check those comments before signing in. These credentials are for this quiz, not a university account.**
 
-This IDS 706 Week 7 project uses Next.js, Supabase Auth, and hosted PostgreSQL. Five SQL questions are worth four points each. The dataset contains 12 synthetic mine-inspection records, not real inspections or safety advice.
+This IDS 706 Week 7 project uses Next.js, Supabase Auth, and hosted PostgreSQL. Its five questions are worth four points each and use 12 synthetic safety-inspection records from three mine sites. The records are teaching data, not real inspections or safety advice.
 
 ## Taking the quiz
 
-Sign in, choose a question, enter SQL, and click **Run SQL & check answer**. The result comes from PostgreSQL. The server compares returned values and the row order requested in the question, not SQL text or alias spelling. Correct results earn 4 points and incorrect results earn 0; the total is shown out of 20. Hints are available, so this is a practice quiz rather than a secure examination.
+Sign in, choose a question, enter SQL, and click **Run SQL & check answer**. The result comes from PostgreSQL. Each question includes a hint, reference SQL, and an expected result table. Grading compares the returned values and the requested column and row order, not SQL text or column aliases. A correct answer earns 4 points; an incorrect answer earns 0. The total is displayed out of 20. Hints are allowed: this is a practice quiz, not a secure examination.
 
-Editing SQL or parameters clears that question's displayed score until it is run again. **Preview live data** shows all 12 records but awards no points. **Save quiz** stores the questions, answers, parameters, and scores derived from recorded runs. Refresh and use **Open** to restore them. Old saved quizzes remain available; answers saved before grading was added need to be run once to earn scores.
+Editing an answer or its parameters clears that question's displayed score until it is run again. **Preview live data** retrieves all 12 records without awarding points. **Save quiz** stores a private copy of the questions, answers, parameters, and scores derived from recorded runs. Refresh and click **Open** to restore it. **New copy** starts another draft.
 
-Visitors may read hints and edit an unsaved draft while signed out. Query execution, saving, saved quizzes, and activity history require a verified user. Save requests cannot set their own owner or score.
+Signed-out visitors may read hints and edit an unsaved draft, but cannot execute queries, preview live data, save, or retrieve private records. The website offers sign-in and sign-out only; it does not offer public registration or send registration emails.
 
 ## Parameterized queries
 
-Ordinary SELECT queries still work with `[]` in the Parameters box. To bind values separately, use placeholders and a JSON array:
+All five questions accept an optional JSON parameter array. Use `[]` when no parameters are needed. The first question has a **Use parameterized example** shortcut:
 
 ```sql
 SELECT inspection_id, mine_site, hazard_type
@@ -33,48 +33,65 @@ ORDER BY inspection_id;
 ["High", "Open"]
 ```
 
-The first question has a **Use parameterized example** button. Values are passed through node-postgres's `values` argument, not substituted into SQL text. The validator checks placeholder numbering and value types. `check:db` verifies the parameterized result and checks that injection-like text stays data.
+Values are passed separately through node-postgres's `values` argument, not inserted into SQL text. The validator checks placeholder numbering and parameter types. The live database test also verifies that injection-like parameter text remains data. Other questions can use parameters where appropriate, such as `LIMIT $1` with `[3]` in question 3.
 
-## Setup
+## Local setup
 
-Use Node.js 22 or 24. Copy `.env.example` to `.env.local` only if a configured local file does not already exist. Keep the following four values from your Supabase project:
+Use Node.js 22 or 24. Copy `.env.example` to `.env.local` only if you do not already have a configured local file. This deployment uses four variables:
 
 | Variable | Purpose |
 | --- | --- |
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase HTTPS Project URL. |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Publishable API key for the client and authenticated requests. |
-| `QUIZ_DATABASE_URL` | `quiz_reader` Session pooler URI, port 5432, with `?sslmode=require`. |
-| `QUIZ_DATABASE_CA_CERT` | Trusted CA PEM text, including BEGIN and END lines. |
+| `QUIZ_DATABASE_URL` | The `quiz_reader` Session pooler URI, using port 5432 and `?sslmode=require`. Server only. |
+| `QUIZ_DATABASE_CA_CERT` | Trusted CA PEM text, including its BEGIN and END lines. Server only. |
 
-The database password belongs to `quiz_reader`, not a website user or database administrator. The driver verifies TLS certificates. The CA accepts real line breaks or escaped `\n` sequences. Existing working connection settings do not change for this upgrade.
+The database password belongs to `quiz_reader`, not a website user. Use the Session pooler username `quiz_reader.<project-ref>` and percent-encode reserved password characters in the URI. TLS certificate verification stays enabled. The CA value accepts actual line breaks or escaped `\n` sequences. Keep `.env.local` excluded from Git.
 
 ```powershell
 npm ci
 npm run dev
 ```
 
-Open `http://localhost:3000`. For a new database, run SQL scripts 01, 02, 03, and 04 in `supabase/` in order. Set the reader's LOGIN/password separately. In the database already used for this project, run **only `04_extra_credit.sql`**, then **`05_verify_audit_integrity.sql`**. These do not replace teaching data or reset passwords.
+Open `http://localhost:3000`.
 
-This site provides sign-in and sign-out only; it does not offer self-registration or send registration emails. Keep the Email provider enabled in Supabase Auth. Create and auto-confirm grading accounts in **Authentication → Users → Add user → Create new user**, and provide their quiz-only credentials in the Canvas assignment comments. In **Authentication → Sign In / Providers**, turn off **Allow new users to sign up** to disable public registration while allowing existing users to sign in. Do not turn off the Email provider. Set the Auth Site URL to the public quiz URL. No OAuth application or administrator credential is needed by the website.
+## Database and authentication
+
+For a new Supabase project, run these files in order in the SQL Editor as `postgres`:
+
+```text
+supabase/01_quiz_data.sql
+supabase/02_quiz_reader_permissions.sql
+supabase/03_saved_quizzes.sql
+supabase/04_extra_credit.sql
+```
+
+Assign `quiz_reader` its LOGIN setting and password separately. The scripts contain no passwords. Keep `quiz_data` outside the Data API's exposed schemas: teaching queries use the authenticated Next.js endpoint and Session pooler, while saved quizzes use the user's Supabase token and owner-only row-level security (RLS). The existing deployed project already has these migrations applied; it does not need to be recreated.
+
+Keep the Email provider enabled in Supabase Auth and disable **Allow new users to sign up**. Create and auto-confirm grading accounts through **Authentication → Users → Add user → Create new user**. Set the Auth Site URL to the public quiz URL. No OAuth application, SMTP service, or database administrator credential is required by the website.
 
 ## Audit history and integrity
 
-**My activity** shows the caller's latest 50 query and save events. Each entry includes a user ID, server timestamp, operation, and the SQL/parameters or saved quiz contents. Authenticated query execution rejections are also recorded. Save, update, and delete events come from a database trigger and commit in the same transaction as the saved record.
+**My activity** shows the caller's latest 50 recorded query and save events, including the user ID, server timestamp, operation, and SQL/parameters or saved contents. Save, update, and delete events are recorded by a database trigger in the same transaction as the saved record.
 
-The private `quiz_audit.events` table has no direct access grants for `anon`, `authenticated`, or `quiz_reader`. The backend reader may call one append-only function after verifying the user's token; it cannot update or delete existing events. Student SQL cannot call that function. A separate read-only RPC checks `auth.uid()` and returns only the caller's events. This provides taker-level integrity, not protection against the database owner. SQL Editor administrators can inspect the full table.
+The private `quiz_audit.events` table denies direct access to `anon`, `authenticated`, and `quiz_reader`. After verifying a user, the backend can call a narrowly granted append function, but student SQL cannot call it. A read-only RPC returns only the caller's history. Saved scores are derived from matching server-recorded runs; client-supplied scores are ignored. These controls protect against the taker roles, not the database owner, and do not promise a complete access log during outages.
 
-Saved scores are rebuilt by a trigger from the most recent matching server-recorded query for that user, question, SQL, and parameters. Client-supplied scores are ignored. New edits without matching runs have no saved score. Query results are not reported as successful if their audit write fails. Requests rejected before a usable authenticated query is received, and database outages, are not a guarantee of a complete access log.
+Run `supabase/05_verify_audit_integrity.sql` as `postgres` for the administrative integrity check. It exercises denied operations, caller isolation, unchanged entries, save logging, and forged-score rejection. Temporary data and role grants are rolled back; the existing records and permissions remain unchanged after a successful run.
 
-## Checks and deployment
+## Checks, CI, and deployment
 
 ```powershell
 npm run check:all
 ```
 
-`check:all` runs the following checks in sequence and stops at the first failure. `check` runs TypeScript, automated tests, and a production build. `check:db` verifies the live dataset, all five answers, and bound parameters. `check:audit` verifies grants and actually attempts prohibited table operations as `quiz_reader`. Run SQL script 05 as `postgres` to test mutation attempts under `authenticated`, `anon`, and `quiz_reader`, caller-only history, unchanged log contents, save logging, and rejection of forged saved scores. Its temporary test records are removed before commit; unexpected success aborts the transaction.
+This runs TypeScript checking, automated tests, the production build, `check:db`, and `check:audit`, stopping on failure. The database check executes all five reference answers and parameterized queries against Supabase. The audit check verifies privileges and actually attempts prohibited operations as `quiz_reader`. SQL script 05 separately checks the other taker roles and database triggers.
 
-GitHub Actions uses the existing `QUIZ_DATABASE_URL` and `QUIZ_DATABASE_CA_CERT` Secrets. Its `tests` and `live-database` jobs must both pass; the latter now includes the audit check. No new Secret is required. Deploy the repository to Vercel with the same four Production environment variables and apply migration 04 before deploying the new code. Use the free `vercel.app` URL.
+GitHub Actions uses Node.js 22. The `tests` job runs offline checks and a build; `live-database` runs `check:db` and `check:audit` using the repository Secrets `QUIZ_DATABASE_URL` and `QUIZ_DATABASE_CA_CERT`. Pushes to `main` and manual runs include the live checks. Pull requests run offline checks without those secrets. The badge links to the workflow.
 
-The baseline previously passed 58 tests, live database checks, CI, and hosted querying. The added parameter, audit, integrity, and grading features need the acceptance checks in [docs/acceptance.md](docs/acceptance.md) after this upgrade. Record actual results there rather than assuming new deployment success.
+The site is deployed on Vercel. To reproduce the deployment, import this repository as Next.js and configure the same four variables for Production before building. Use the assigned `vercel.app` URL and verify that graders can open it without a separate Vercel login. Environment-variable changes require a new deployment.
 
-The SQL editor remains deliberately limited to one SELECT on the teaching table, common expressions and aggregates, grouping, sorting, and LIMIT. It does not support joins, CTEs, subqueries, or other schemas. Execution is read-only, limited to three seconds and 100 displayed rows. The implementation addresses the three optional areas—parameter binding, activity logging, and taker-level log integrity—but extra-credit marks depend on the demonstrated results and the course rubric.
+## Verification and limitations
+
+TypeScript checking, all **117 automated tests**, the production build, and both live database checks passed. SQL script 05 completed **19 integrity checks**. The latest CI checks passed, and production testing confirmed all five answers, **20/20** scoring, incorrect-answer scoring, save/reopen recovery, query and save activity, cross-account isolation, and signed-out restrictions. The detailed record is in [docs/acceptance.md](docs/acceptance.md).
+
+The query editor supports a limited SQL subset: one SELECT over the teaching table, common expressions and aggregates, grouping, sorting, and LIMIT. Joins, CTEs, subqueries, other schemas, and writes are not supported. Execution is read-only, has a three-second statement timeout, and displays at most 100 rows. Parameter binding, operation logging, and taker-level log integrity are implemented and tested for the optional extra-credit requirements; the course determines the awarded marks.

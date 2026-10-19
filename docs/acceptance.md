@@ -1,25 +1,45 @@
-# Extra-credit acceptance
+# Final acceptance record
 
-The deployed baseline and original 58-test suite were checked before this upgrade. Do not treat those results as tests of the new code. Record dates and results below after running it locally and on the production URL.
+Production site: https://sql-quiz-supabase.vercel.app
 
-| Check | Result after upgrade |
+The project owner confirmed completion of the final production acceptance run. This record combines that manual verification with the supplied local test output, live database checks, and SQL integrity-check results. It does not describe a separate external audit.
+
+## Automated and database checks
+
+| Check | Result |
 | --- | --- |
-| SQL migration 04 returns true / true / false / false / true | Pending |
-| SQL verification 05: every returned `passed` value is true | Pending |
-| `npm run check` | Pending |
-| `npm run check:db`: normal and parameterized live queries | Pending |
-| `npm run check:audit`: real reader mutation attempts are denied | Pending |
-| Latest GitHub Actions `tests` and `live-database` jobs | Pending |
-| Signed-out query, save and history requests are rejected | Pending |
-| First question's parameterized example returns 4 rows and earns 4/4 | Pending |
-| Literal SQL answers still work with [] parameters | Pending |
-| Wrong answer earns 0; edited answers clear the old score | Pending |
-| Five reference answers produce a total of 20/20 | Pending |
-| Save, refresh and Open restore SQL, parameters and trusted scores | Pending |
-| My activity shows the correct user, SQL/parameters and save contents | Pending |
-| Second user's activity and saved quizzes do not expose the first user's | Pending |
-| Production sign-out clears results, scores and private activity | Pending |
+| TypeScript checking | Passed |
+| Automated tests | 117 passed; 0 failed; 0 skipped |
+| Next.js production build | Passed |
+| Verified TLS connection through Session pooler | Passed |
+| Reader permissions and 12 visible teaching records | Passed |
+| Five live reference results | Passed; five questions, 20 points |
+| Bound values, injection-like text as data, parameterized LIMIT | Passed in the live database check |
+| `check:audit` | Passed; prohibited reader operations returned 42501 |
+| SQL migration 04 verification | true / true / false / false / true |
+| SQL verification 05 | 19 checks passed; fixture and role-grant rollback included |
 
-For the parameter test, use the first question's example with `["High", "Open"]`. Change only the first value to `"High' OR 1=1 --"`: the result should be empty, not a bypassed filter. Restore the example afterward.
+## Production acceptance
 
-Script 05 is an administrative verification, not a button exposed to takers. It changes effective roles inside a transaction and attempts INSERT, UPDATE, DELETE and TRUNCATE against actual temporary probe entries. It also tests the own-history function and save triggers. A successful run leaves existing data unchanged; an unexpected allowed operation raises an error and rolls the transaction back. Save its output as evidence of the integrity check.
+| # | Check | Result |
+| --- | --- | --- |
+| 1 | Signed-out Run, Preview, Save, and private-record access are restricted | Passed |
+| 2 | Grading account can sign in | Passed |
+| 3 | Preview live data returns 12 rows | Passed |
+| 4 | Parameterized question 1 returns IDs 1, 3, 5, 11 and earns 4/4 | Passed |
+| 5 | Question 2 returns North Mine 5, South Mine 4, East Mine 3 and earns 4/4 | Passed |
+| 6 | Question 3 returns IDs 12, 11, 10 and earns 4/4 | Passed |
+| 7 | Question 4 returns East Mine 3, North Mine 4, South Mine 3 and earns 4/4 | Passed |
+| 8 | Question 5 returns North Mine 5, South Mine 4 and earns 4/4 | Passed |
+| 9 | Five correct answers total 20/20 | Passed |
+| 10 | A valid but incorrect query earns 0/4; editing clears the previous score | Passed |
+| 11 | Save, refresh, and Open restore SQL, parameters, and scores | Passed |
+| 12 | My activity shows query/save events with the correct actor and contents | Passed |
+| 13 | Another account cannot see the first account's quizzes or activity | Passed |
+| 14 | Sign-out restores restrictions and clears private activity | Passed |
+| 15 | Latest CI passes both jobs; live-database includes check:db and check:audit | Passed, as confirmed by the project owner |
+| 16 | Final README includes production URL, badge, Canvas access notice, and current verification results | Updated in this documentation set; commit and push both documents before submission |
+
+## Submission
+
+Submit the GitHub repository URL to Canvas. Send the quiz login email and quiz-only password separately in the assignment comments and ensure the comment is posted. The README directs graders to those comments. No extra-credit point total is assumed because the supplied rubric does not state one.
